@@ -1,0 +1,37 @@
+trigger:
+- develop
+
+variables:
+- name: buildConfiguration
+  value: 'Release'
+stages:
+- stage: Build
+  displayName: 'Build & Test Stage'
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - task: CmdLine@2
+      displayName: 'dotnet build $(buildConfiguration)'
+      inputs:
+        script: dotnet build --configuration $(buildConfiguration)
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '**/NetCore6.Api.csproj' 
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/buildRelease'
+        zipAfterPublish: true
+      condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'develop'))
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'  
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)'
