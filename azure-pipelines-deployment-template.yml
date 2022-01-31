@@ -14,8 +14,6 @@ jobs:
     environment: ${{parameters.environment}}
     pool:
       vmImage: windows-latest   
-    variables:
-      DataConnectionString : '${{parameters.connectionstring}}'
     strategy:
       runOnce:
         deploy:
