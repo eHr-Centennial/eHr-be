@@ -1,37 +1,56 @@
 trigger:
 - develop
+- QA
+- main
 
 variables:
-- name: buildConfiguration
-  value: 'Release'
+  buildConfiguration: 'Release'
+
 stages:
+
 - stage: Build
   displayName: 'Build & Test Stage'
   jobs:
   - job: Build
     pool:
       vmImage: 'ubuntu-latest'
+
     steps:
+
     - task: CmdLine@2
-      displayName: 'dotnet build $(buildConfiguration)'
+      displayName: 'dotnet build '
       inputs:
-        script: dotnet build --configuration $(buildConfiguration)
+        script: dotnet build $(Solution)
+
     - task: DotNetCoreCLI@2
       inputs:
         command: 'publish'
         publishWebProjects: false
-        projects:  src/NetCore6.Api/NetCore6.Api.csproj
-    
-        arguments: '--configuration Release /p:Environment=Dev --output $(Build.ArtifactStagingDirectory)/buildRelease'
+        projects: '$(Solution)'
+        arguments: '--configuration Release /p:Environment=Development --output $(Build.ArtifactStagingDirectory)/buildRelease'
         zipAfterPublish: true
+      condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '$(Solution)'
+        arguments: '--configuration Release /p:Environment=Development --output $(Build.ArtifactStagingDirectory)/buildRelease'
+        zipAfterPublish: true 
       condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'develop'))
-
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '$(Solution)'
+        arguments: '--configuration Release /p:Environment=QA --output $(Build.ArtifactStagingDirectory)/buildRelease'
+        zipAfterPublish: true 
+      condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'QA'))
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
-        publishLocation: 'Container'  
-
+        publishLocation: 'Container'
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact'
       inputs:
