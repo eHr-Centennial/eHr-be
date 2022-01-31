@@ -1,0 +1,50 @@
+parameters:  
+  webAppName: ''
+  connectionString: ''
+  productionEnv: false
+  azureSubs: ''
+  environment: '' 
+  artifactFile: ''
+
+
+  
+jobs:
+  - deployment: DeployInfraestructureDev
+    displayName: "Deploy Infraestructure and App to Dev"
+    environment: ${{parameters.environment}}
+    pool:
+      vmImage: windows-latest   
+    variables:
+      DataConnectionString : '${{parameters.connectionstring}}'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: DownloadBuildArtifacts@0
+              displayName: 'Download the build artifacts'
+              inputs:
+                buildType: 'current'
+                downloadType: 'single'
+                artifactName: 'drop'
+                downloadPath: '$(build.ArtifactStagingDirectory)'
+          
+            - task: SqlAzureDacpacDeployment@1
+              displayName: 'Azure SQL SqlTask'
+              inputs:
+                azureSubscription: '${{parameters.azureSubs}}'
+                AuthenticationType: connectionString
+                ConnectionString: '${{parameters.connectionString}}'
+                deployType: SqlTask
+                SqlFile: '$(build.artifactstagingdirectory)/drop/SQL/migrations_script.sql'
+
+            - task: AzureRmWebAppDeployment@4
+              displayName: 'Azure App Service Deploy Fischer BE'
+              inputs:
+                azureSubscription: '${{parameters.azureSubs}}'
+                WebAppName: '${{parameters.webAppName}}'
+                packageForLinux: '$(build.ArtifactStagingDirectory)/drop/${{parameters.artifactFile}}'
+              condition: and(succeeded(), eq('${{parameters.productionEnv}}',false))
+              
+              
+
+              
