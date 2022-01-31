@@ -64,7 +64,6 @@ stages:
   - template: azure-pipelines-deployment-template.yml
     parameters:
       webAppName: '$(WebAppName)'
-      connectionString: '$(connectionString)'
       azureSubs: '$(azuresubscription)'
       artifactFile: 'buildRelease/*.zip'
       environment: 'Dev'
