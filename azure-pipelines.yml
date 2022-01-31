@@ -55,3 +55,17 @@ stages:
       displayName: 'Publish Artifact'
       inputs:
         PathtoPublish: '$(build.artifactstagingdirectory)'
+
+- stage: DeployToDev
+  displayName: Deploy Infraestructure and App to Azure Dev
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'develop'))
+  jobs:
+  - template: azure-pipelines-deployment-template.yml
+    parameters:
+      webAppName: '$(WebAppName)'
+      connectionString: '$(connectionString)'
+      azureSubs: '$(azuresubscription)'
+      artifactFile: 'buildRelease/*.zip'
+      environment: 'Dev'
+      productionEnv: false
